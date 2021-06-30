@@ -182,3 +182,4 @@ def main():
             break
     cap.release()
     cv2.destroyAllWindows()
+main()
