@@ -75,19 +75,12 @@ def cut_eyebrows(eye_img):
 def blob_process(img, threshold, detector):
     gray_frame = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, img = cv2.threshold(gray_frame, threshold, 255, cv2.THRESH_BINARY)
-    img = cut_eyebrows(img)
-    img = cv2.erode(img, None, iteratio x:x + w]
-    return frame    
-
-def detect_eyes(image, classifier):
-    gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    eyes = classifier.detectMultiScale(gray_frame) # detect eyes
-    width = np.size(image, 1) # get face frame width
-    height = np.size(image, 0) # get face frame height
-    left_eye = None
-    right_eye = None
-    for (x, y, w, h) in eyes:
-        #cv2.rectangle(image,(
+    img = cv2.erode(img, None, iterations=2)
+    img = cv2.dilate(img, None, iterations=4)
+    img = cv2.medianBlur(img, 5)
+    keypoints = detector.detect(img)
+    print(keypoints)
+    return keypoints
 
 
 def main():
@@ -110,5 +103,10 @@ def main():
             break
     cap.release()
     cv2.destroyAllWindows()
+
+
+def nothing(x):
+    pass
+
 
 main()
