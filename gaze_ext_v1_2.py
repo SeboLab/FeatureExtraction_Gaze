@@ -3,20 +3,19 @@ import cv2
 import numpy as np
 
 
-face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
-
 def init_cv():
     """loads all of cv2 tools"""
-    face_detector = cv2.CascadeClassifier(
-        os.path.join("Classifiers", "haar", "haarcascade_frontalface_default.xml"))
-    eye_detector = cv2.CascadeClassifier(os.path.join("Classifiers", "haar", 'haarcascade_eye.xml'))
+    face_detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    eye_detector = cv2.CascadeClassifier('haarcascade_eye.xml')
     detector_params = cv2.SimpleBlobDetector_Params()
     detector_params.filterByArea = True
     detector_params.maxArea = 1500
     detector = cv2.SimpleBlobDetector_create(detector_params)
 
     return face_detector, eye_detector, detector
+
+
+face_detector, eye_detector, detector = init_cv()
 
 
 def detect_face(img, img_gray, cascade):
@@ -129,34 +128,30 @@ def update_frame(base_image, threshold, previous_area, previous_left_blob_area, 
 
         processed_image = cv2.cvtColor(base_image, cv2.COLOR_RGB2GRAY)
 
-        face_frame, face_frame_gray, left_eye_estimated_position, right_eye_estimated_position, _, _ = detect_face(base_image, processed_image, face_cascade)
+        face_frame, face_frame_gray, left_eye_estimated_position, right_eye_estimated_position, _, _ = detect_face(base_image, processed_image, face_detector)
 
         if face_frame is not None:
-            left_eye_frame, right_eye_frame, left_eye_frame_gray, right_eye_frame_gray = detect_eyes(face_frame,face_frame_gray,left_eye_estimated_position,right_eye_estimated_position,eye_cascade)
+            left_eye_frame, right_eye_frame, left_eye_frame_gray, right_eye_frame_gray = detect_eyes(face_frame,face_frame_gray,left_eye_estimated_position,right_eye_estimated_position,eye_detector)
 
             if right_eye_frame is not None:
                 right_eye_threshold = threshold
                 right_keypoints, previous_right_keypoints, previous_right_blob_area = get_keypoints(
-                        right_eye_frame, right_eye_frame_gray, right_eye_threshold,
-                        previous_area, previous_right_blob_area,
-                        previous_keypoint, previous_right_keypoints)
+                        right_eye_frame, right_eye_frame_gray, right_eye_threshold, previous_keypoint, previous_area)
                 draw_blobs(right_eye_frame, right_keypoints)
                 right_eye_frame = np.require(right_eye_frame, np.uint8, 'C')
 
             if left_eye_frame is not None:
                 left_eye_threshold = threshold
                 left_keypoints, previous_left_keypoints, previous_left_blob_area = get_keypoints(
-                        left_eye_frame, left_eye_frame_gray, left_eye_threshold,
-                        previous_area, previous_left_blob_area,
-                        previous_keypoint, previous_left_keypoints)
+                        left_eye_frame, left_eye_frame_gray, left_eye_threshold, previous_keypoint, previous_area)
                 draw_blobs(left_eye_frame, left_keypoints)
                 left_eye_frame = np.require(left_eye_frame, np.uint8, 'C')
 
-        return base_image,previous_area, previous_left_blob_area, previous_right_blob_area,previous_keypoint,previous_left_keypoints, previous_right_keypoints
+        return base_image, (previous_area, previous_left_blob_area, previous_right_blob_area),(previous_keypoint,previous_left_keypoints, previous_right_keypoints)
 
 def get_keypoints (frame, frame_gray, threshold, previous_keypoint, previous_area):
 
-    keypoints = process_eye(frame_gray, threshold, eye_cascade,
+    keypoints = process_eye(frame_gray, threshold, detector,
                                         prevArea=previous_area)
     if keypoints:
         previous_keypoint = keypoints
@@ -175,10 +170,13 @@ def main():
     while True:
         _, frame = cap.read()
         threshold = cv2.getTrackbarPos('threshold', 'image')
-        frame,previous_area, previous_left_blob_area, 
-        previous_right_blob_area,previous_keypoint,previous_left_keypoints, previous_right_keypoints = update_frame(frame, threshold, previous_area, previous_left_blob_area, previous_right_blob_area,previous_keypoint,previous_left_keypoints, previous_right_keypoints)
+        frame, arealr, keypointslr = update_frame(frame, threshold, previous_area, previous_left_blob_area, previous_right_blob_area,previous_keypoint,previous_left_keypoints, previous_right_keypoints)
+        previous_area,previous_left_blob_area,previous_right_blob_area = arealr[0], arealr[1], arealr[2]
+        previous_keypoint, previous_left_keypoints, previous_right_keypoints = keypointslr[0],keypointslr[1],keypointslr[2]
         cv2.imshow('image', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cap.release()
     cv2.destroyAllWindows()
+
+main()
