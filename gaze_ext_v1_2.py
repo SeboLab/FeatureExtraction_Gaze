@@ -36,7 +36,7 @@ def detect_face(img, img_gray, cascade):
     elif len(coords) == 1:
         biggest = coords
     else:
-        return None, None, None, None, None, None
+        return None, None, None, None, None, None, None, None
     for (x, y, w, h) in biggest:
         frame = img[y:y + h, x:x + w]
         frame_gray = img_gray[y:y + h, x:x + w]
@@ -44,8 +44,10 @@ def detect_face(img, img_gray, cascade):
         rest = (int(w * 0.55), int(w * 0.9))
         X = x
         Y = y
+        W = w
+        H = h
 
-    return frame, frame_gray, lest, rest, X, Y
+    return frame, frame_gray, lest, rest, X, Y, W, H
 
 
 def detect_eyes(img, img_gray, lest, rest, cascade):
@@ -125,9 +127,10 @@ def update_frame(base_image, threshold, previous_area, previous_left_blob_area, 
 
         processed_image = cv2.cvtColor(base_image, cv2.COLOR_RGB2GRAY)
 
-        face_frame, face_frame_gray, left_eye_estimated_position, right_eye_estimated_position, _, _ = detect_face(base_image, processed_image, face_detector)
+        face_frame, face_frame_gray, left_eye_estimated_position, right_eye_estimated_position, X, Y, W, H = detect_face(base_image, processed_image, face_detector)
 
         if face_frame is not None:
+            cv2.rectangle(base_image,(X,Y),(X+W,Y+H),(255,255,0),2)
             left_eye_frame, right_eye_frame, left_eye_frame_gray, right_eye_frame_gray = detect_eyes(face_frame,face_frame_gray,left_eye_estimated_position,right_eye_estimated_position,eye_detector)
 
             if right_eye_frame is not None:
